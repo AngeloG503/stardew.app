@@ -19,13 +19,13 @@ export default function SecretNotes() {
 		}
 	}, [activePlayer]);
 
-	let secretNotes: ReactElement[] = [];
+	const secretNotes: ReactElement[] = [];
 	Object.entries(notes).forEach(([id, note]) => {
 		if (parseInt(id) > 1000) {
 			return;
 		}
 		let content;
-		let results = note.content.match(/\[(.+)\]\((.+)\)/);
+		const results = note.content.match(/\[(.+)\]\((.+)\)/);
 		if (results) {
 			content = (
 				<Image src={results[2]} alt={results[1]} width={216} height={216} />

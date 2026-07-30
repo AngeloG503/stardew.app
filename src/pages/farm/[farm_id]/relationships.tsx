@@ -50,6 +50,7 @@ const bubbleColors: Record<string, string> = {
 export default function Relationships() {
 	const { activePlayer } = usePlayers();
 
+
 	const [open, setIsOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const [_filter, setFilter] = useState("all");

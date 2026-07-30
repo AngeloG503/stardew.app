@@ -1,11 +1,11 @@
-import { X } from "lucide-react";
 import Head from "next/head";
 
 import achievements from "@/data/achievements.json";
-import recipes from "@/data/cooking.json";
+import bigobjects from "@/data/big_craftables.json";
+import recipes from "@/data/crafting.json";
 import objects from "@/data/objects.json";
 
-import type { Recipe } from "@/types/recipe";
+import type { CraftingRecipe } from "@/types/recipe";
 
 import { useMultiSelect } from "@/contexts/multi-select-context";
 import { usePlayers } from "@/contexts/players-context";
@@ -18,6 +18,7 @@ import { RecipeCard } from "@/components/cards/recipe-card";
 import { BetaFeaturesDialog } from "@/components/dialogs/beta-features-dialog";
 import { BulkActionDialog } from "@/components/dialogs/bulk-action-dialog";
 import { FilterSearch } from "@/components/filter-btn";
+import { IngredientList } from "@/components/ingredient-list";
 import { RecipeSheet } from "@/components/sheets/recipe-sheet";
 import {
 	Accordion,
@@ -30,16 +31,15 @@ import { Command, CommandInput } from "@/components/ui/command";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-
-import { IngredientList } from "@/components/ingredient-list";
 import { IconClock } from "@tabler/icons-react";
+import { X } from "lucide-react";
 
 const semverGte = require("semver/functions/gte");
 
 const reqs: Record<string, number> = {
-	"Cook": 10,
-	"Sous Chef": 25,
-	"Gourmet Chef": Object.keys(recipes).length, // 1.6 default
+	"D.I.Y.": 15,
+	"Artisan": 30,
+	"Craft Master": Object.keys(recipes).length,
 };
 
 const bubbleColors: Record<string, string> = {
@@ -71,11 +71,12 @@ const seasons = [
 	},
 ];
 
-export default function Cooking() {
+export default function Crafting() {
 	const router = useRouter();
+	const { activePlayer } = usePlayers();
 
 	const [open, setIsOpen] = useState(false);
-	const [recipe, setRecipe] = useState<Recipe | null>(null);
+	const [recipe, setRecipe] = useState<CraftingRecipe | null>(null);
 	const [playerRecipes, setPlayerRecipes] = useState<{
 		[key: string]: 0 | 1 | 2;
 	}>({});
@@ -87,11 +88,10 @@ export default function Cooking() {
 	const [search, setSearch] = useState("");
 	const [ingredientSearch, setIngredientSearch] = useState("");
 	const [_filter, setFilter] = useState("all");
-	const [bulkActionOpen, setBulkActionOpen] = useState(false);
+	const [_seasonFilter, setSeasonFilter] = useState("all");
 
 	const [betaDialogOpen, setBetaDialogOpen] = useState(false);
 
-	const { activePlayer } = usePlayers();
 	const { showBetaFeatures, toggleBetaFeatures } = usePreferences();
 	const {
 		isMultiSelectMode,
@@ -100,12 +100,12 @@ export default function Cooking() {
 		clearSelection,
 	} = useMultiSelect();
 
-	const [_seasonFilter, setSeasonFilter] = useState("all");
+	const [bulkActionOpen, setBulkActionOpen] = useState(false);
 
 	useEffect(() => {
 		if (activePlayer) {
-			if (activePlayer.cooking?.recipes) {
-				setPlayerRecipes(activePlayer.cooking.recipes);
+			if (activePlayer.crafting?.recipes) {
+				setPlayerRecipes(activePlayer.crafting.recipes);
 			} else setPlayerRecipes({});
 
 			// update the requirements for achievements and set the minimum game version
@@ -113,25 +113,26 @@ export default function Cooking() {
 				const version = activePlayer.general.gameVersion;
 				setGameVersion(version);
 
-				reqs["Gourmet Chef"] = Object.values(recipes).filter((r) =>
+				reqs["Craft Master"] = Object.values(recipes).filter((r) =>
 					semverGte(version, r.minVersion),
 				).length;
 			}
 		}
 	}, [activePlayer]);
 
-	const cookedCount = useMemo(() => {
-		if (!activePlayer || !activePlayer.cooking?.recipes) return 0;
+	// calculate craftedCount here (all values of 2)
+	const craftedCount = useMemo(() => {
+		if (!activePlayer || !activePlayer.crafting?.recipes) return 0;
 
-		return Object.values(activePlayer.cooking.recipes).filter((r) => r > 1)
+		return Object.values(activePlayer.crafting.recipes).filter((r) => r === 2)
 			.length;
 	}, [activePlayer]);
 
-	// tracks how many recipes the players knows but has not cooked
+	// tracks how many recipes the player knows but hasn't crafted
 	const knownCount = useMemo(() => {
-		if (!activePlayer || !activePlayer.cooking?.recipes) return 0;
+		if (!activePlayer || !activePlayer.crafting?.recipes) return 0;
 
-		return Object.values(activePlayer.cooking.recipes).filter((r) => r === 1)
+		return Object.values(activePlayer.crafting.recipes).filter((r) => r === 1)
 			.length;
 	}, [activePlayer]);
 
@@ -143,12 +144,21 @@ export default function Cooking() {
 			return { completed, additionalDescription };
 		}
 
-		completed = cookedCount >= reqs[name];
+		completed = craftedCount >= reqs[name];
 
 		if (!completed) {
-			additionalDescription = ` - ${reqs[name] - cookedCount} left`;
+			additionalDescription = ` - ${reqs[name] - craftedCount} left`;
 		}
+
 		return { completed, additionalDescription };
+	};
+
+	const getName = (id: string, isBigCraftable: boolean) => {
+		if (isBigCraftable) {
+			return bigobjects[id as keyof typeof bigobjects].name;
+		} else {
+			return objects[id as keyof typeof objects].name;
+		}
 	};
 
 	useEffect(() => {
@@ -186,26 +196,26 @@ export default function Cooking() {
 	return (
 		<>
 			<Head>
-				<title>Stardew Valley Cooking Tracker | stardew.app</title>
+				<title>Stardew Valley Crafting Tracker | stardew.app</title>
 				<meta
 					name="title"
-					content="Stardew Valley Cooking Recipes | stardew.app"
+					content="Stardew Valley Crafting Recipes | stardew.app"
 				/>
 				<meta
 					name="description"
-					content="Find and discover new cooking recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep track of the recipes you've learned and monitor your progress towards becoming a skilled chef."
+					content="Track and complete crafting recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep tabs on the crafting recipes you've unlocked and monitor your progress towards completing the full recipe collection. Discover what recipes are left to unlock and become a master crafter in Stardew Valley."
 				/>
 				<meta
 					name="og:description"
-					content="Find and discover new cooking recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep track of the recipes you've learned and monitor your progress towards becoming a skilled chef."
+					content="Track and complete crafting recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep tabs on the crafting recipes you've unlocked and monitor your progress towards completing the full recipe collection. Discover what recipes are left to unlock and become a master crafter in Stardew Valley."
 				/>
 				<meta
 					name="twitter:description"
-					content="Find and discover new cooking recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep track of the recipes you've learned and monitor your progress towards becoming a skilled chef."
+					content="Track and complete crafting recipes in Stardew Valley (supports 1.6 through 1.6.9). Keep tabs on the crafting recipes you've unlocked and monitor your progress towards completing the full recipe collection. Discover what recipes are left to unlock and become a master crafter in Stardew Valley."
 				/>
 				<meta
 					name="keywords"
-					content="stardew valley cooking recipe tracker, stardew valley cooking recipes, stardew valley recipe collection, stardew valley skilled chef, stardew valley recipe progress, stardew valley culinary skills, stardew valley gameplay tracker, stardew valley, stardew, cooking tracker, stardew valley, stardew, stardew checkup, stardew bundles, stardew 100% completion, stardew perfection tracker, stardew, valley"
+					content="stardew valley crafting recipe tracker, stardew valley crafting recipes, stardew valley recipe collection, stardew valley master crafter, stardew valley recipe progress, stardew valley crafting achievements, stardew valley gameplay tracker, stardew valley, stardew, crafting tracker, stardew valley, stardew, stardew checkup, stardew bundles, stardew 100% completion, stardew perfection tracker, stardew, valley"
 				/>
 			</Head>
 			<main
@@ -213,7 +223,7 @@ export default function Cooking() {
 			>
 				<div className="mx-auto mt-4 w-full space-y-4">
 					<h1 className="ml-1 text-2xl font-semibold text-gray-900 dark:text-white">
-						Cooking Tracker
+						Crafting Tracker
 					</h1>
 					{/* Achievements Section */}
 					<Accordion type="single" collapsible defaultValue="item-1" asChild>
@@ -225,7 +235,7 @@ export default function Cooking() {
 								<AccordionContent asChild>
 									<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
 										{Object.values(achievements)
-											.filter((a) => a.description.includes("Cook"))
+											.filter((a) => a.description.includes("Craft"))
 											.map((achievement) => {
 												const { completed, additionalDescription } =
 													getAchievementProgress(achievement.name);
@@ -276,7 +286,7 @@ export default function Cooking() {
 										/>
 										<span className="align-middle">
 											Unknown (
-											{reqs["Gourmet Chef"] - (knownCount + cookedCount)})
+											{reqs["Craft Master"] - (knownCount + craftedCount)})
 										</span>
 									</ToggleGroupItem>
 									<ToggleGroupItem value="1" aria-label="Show Known">
@@ -288,14 +298,16 @@ export default function Cooking() {
 										/>
 										<span className="align-middle">Known ({knownCount})</span>
 									</ToggleGroupItem>
-									<ToggleGroupItem value="2" aria-label="Show Cooked">
+									<ToggleGroupItem value="2" aria-label="Show Crafted">
 										<span
 											className={cn(
 												"inline-block h-4 w-4 rounded-full border align-middle",
 												bubbleColors["2"],
 											)}
 										/>
-										<span className="align-middle">Cooked ({cookedCount})</span>
+										<span className="align-middle">
+											Crafted ({craftedCount})
+										</span>
 									</ToggleGroupItem>
 								</ToggleGroup>
 								<div className="flex flex-row items-center gap-2">
@@ -348,7 +360,7 @@ export default function Cooking() {
 									.filter((r) => semverGte(gameVersion, r.minVersion))
 									.filter((r) => {
 										if (!search) return true;
-										const name = objects[r.itemID as keyof typeof objects].name;
+										const name = getName(r.itemID, r.isBigCraftable);
 										return name.toLowerCase().includes(search.toLowerCase());
 									})
 									.filter((r) => {
@@ -372,7 +384,7 @@ export default function Cooking() {
 										} else return true; // all recipes
 									})
 									.map((f, index, filteredRecipes) => (
-										<RecipeCard
+										<RecipeCard<CraftingRecipe>
 											key={f.itemID}
 											recipe={f}
 											status={
@@ -381,7 +393,7 @@ export default function Cooking() {
 											setIsOpen={setIsOpen}
 											setObject={setRecipe}
 											index={index}
-											allRecipes={filteredRecipes}
+											allRecipes={filteredRecipes as CraftingRecipe[]}
 										/>
 									))}
 							</div>
@@ -409,7 +421,7 @@ export default function Cooking() {
 											/>
 											<span className="align-middle">
 												Unknown (
-												{reqs["Gourmet Chef"] - (knownCount + cookedCount)})
+												{reqs["Craft Master"] - (knownCount + craftedCount)})
 											</span>
 										</ToggleGroupItem>
 										<ToggleGroupItem value="1" aria-label="Show Known">
@@ -442,7 +454,7 @@ export default function Cooking() {
 									/>
 								</Command>
 							</div>
-							<IngredientList<Recipe>
+							<IngredientList<CraftingRecipe>
 								recipes={recipes}
 								playerRecipes={playerRecipes}
 								filterKnown={_filter}
@@ -478,7 +490,7 @@ export default function Cooking() {
 				<BulkActionDialog
 					open={bulkActionOpen}
 					setOpen={setBulkActionOpen}
-					type="cooking"
+					type="crafting"
 				/>
 			</main>
 		</>

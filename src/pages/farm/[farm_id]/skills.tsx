@@ -47,6 +47,7 @@ const reqs: Record<string, number> = {
 export default function SkillsMasteryPowers() {
 	const { activePlayer, patchPlayer } = usePlayers();
 
+
 	const [editSkillOpen, setEditSkillOpen] = useState(false);
 	const [editSkillName, setEditSkillName] = useState<string>("");
 	const [editSkillValue, setEditSkillValue] = useState(0);

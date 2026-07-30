@@ -37,6 +37,7 @@ const bubbleColors: Record<string, string> = {
 
 export default function RarecrowsPage() {
 	const { activePlayer, patchPlayer } = usePlayers();
+
 	const [rarecrowsFound, setRarecrowsFound] = useState<Set<string>>(new Set());
 
 	const [_filter, setFilter] = useState("all");

@@ -29,6 +29,7 @@ import { X } from "lucide-react";
 
 import { IconClock, IconCloud, IconMapPin } from "@tabler/icons-react";
 
+
 const semverGte = require("semver/functions/gte");
 
 const reqs: Record<string, number> = {
@@ -131,6 +132,8 @@ const bubbleColors: Record<string, string> = {
 };
 
 export default function Fishing() {
+	const { activePlayer, patchPlayer } = usePlayers();
+
 	const [open, setIsOpen] = useState(false);
 	const [fish, setFish] = useState<FishType | null>(null);
 	const [fishCaught, setFishCaught] = useState<Set<string>>(new Set());
@@ -142,8 +145,6 @@ export default function Fishing() {
 	const [_locationFilter, setLocationFilter] = useState("all");
 
 	const [gameVersion, setGameVersion] = useState("1.6.0");
-
-	const { activePlayer, patchPlayer } = usePlayers();
 
 	const {
 		isMultiSelectMode,
