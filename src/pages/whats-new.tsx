@@ -5,7 +5,7 @@ import powers from "@/data/powers.json";
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
-import { typedShippingItems } from "./farm/[id]/shipping";
+import { typedShippingItems } from "./farm/[farm_id]/shipping";
 
 const newShipping = Object.values(typedShippingItems).filter((i) => {
 	if (i.minVersion === "1.6.0") return true;
