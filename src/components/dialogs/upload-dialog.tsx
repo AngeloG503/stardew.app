@@ -34,6 +34,22 @@ type FilePickerWindow = Window &
 	showOpenFilePicker?: () => Promise<SaveFileHandle[]>;
 };
 
+// FileSystemObserver shipped in Chrome/Edge/Opera 133+ (not in Firefox or
+// Safari, and not yet in most TS DOM lib versions, hence the manual types).
+// It reports file changes as they happen instead of us polling for them —
+// this is what lets sync react to Stardew's save-on-sleep almost instantly.
+type FileSystemObserverLike = {
+	observe: (handle: SaveFileHandle) => Promise<void>;
+	disconnect: () => void;
+};
+
+type FileSystemObserverWindow = Window &
+	typeof globalThis & {
+	FileSystemObserver?: new (
+		callback: () => void,
+	) => FileSystemObserverLike;
+};
+
 interface InstructionsDialogProps {
 	open: boolean;
 	setOpen: (open: boolean) => void;
@@ -219,8 +235,27 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 			}
 		};
 
+		// Safety net: catches changes even if the observer below isn't
+		// available, fails to attach, or misses an event (e.g. some cloud-
+		// synced save folders don't reliably fire OS-level file events).
 		const interval = window.setInterval(() => void syncIfChanged(), 60_000);
-		return () => window.clearInterval(interval);
+
+		// Primary path: react to the save file changing as it happens,
+		// instead of waiting on the next poll. Falls back to just the
+		// interval above on Firefox/Safari, where this isn't supported.
+		const observerWindow = window as FileSystemObserverWindow;
+		let observer: FileSystemObserverLike | undefined;
+		if (observerWindow.FileSystemObserver) {
+			observer = new observerWindow.FileSystemObserver(() => void syncIfChanged());
+			observer.observe(syncHandle).catch((err) => {
+				console.error("Could not observe save file for instant sync:", err);
+			});
+		}
+
+		return () => {
+			window.clearInterval(interval);
+			observer?.disconnect();
+		};
 	}, [syncHandle, uploadFile]);
 
 	// Manual fallback for people who'd rather click than drag. This still
@@ -247,7 +282,7 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 			setSyncHandle(handle);
 			setOpen(false);
 			toast.success("Automatic sync connected", {
-				description: "This tab will check the selected save file every minute.",
+				description: "We'll keep this save synced while this tab is open.",
 			});
 		} catch (err) {
 			if (err instanceof DOMException && err.name === "AbortError") return;
@@ -297,7 +332,7 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 					<div className="space-y-2 rounded-md border p-3 text-left">
 						<p className="font-medium">Keep this save in sync</p>
 						<p className="text-muted-foreground text-sm">
-							Choose the original save file to re-read it automatically every minute while this tab is open.
+							Choose the original save file to re-read it automatically while this tab is open.
 						</p>
 						<Button variant="outline" className="w-full" onClick={() => void connectAutomaticSync()}>
 							{syncHandle ? "Automatic sync connected" : "Connect automatic sync"}
