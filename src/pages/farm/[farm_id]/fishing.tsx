@@ -425,7 +425,10 @@ export default function Fishing() {
 												return true;
 											}
 										}
-									} else return true;
+									}
+									else if (_weatherFilter != "all" && f.trapFish === true) {return false}
+
+									return true;
 								})
 								.filter((f) => {
 									if ("seasons" in f && f.trapFish === false) {
@@ -441,6 +444,8 @@ export default function Fishing() {
 
 										return true;
 									}
+									else if (_seasonFilter != "all" && f.trapFish === true) {return false}
+
 									return true;
 								})
 								.filter((f) => {
