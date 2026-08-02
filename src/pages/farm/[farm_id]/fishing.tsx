@@ -27,7 +27,14 @@ import { useMultiSelect } from "@/contexts/multi-select-context";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-import { IconClock, IconCloud, IconMapPin } from "@tabler/icons-react";
+import {
+	IconClock,
+	IconCloud,
+	IconInfinity,
+	IconMapPin,
+} from "@tabler/icons-react";
+
+import { Toggle } from "@/components/ui/toggle";
 
 
 const semverGte = require("semver/functions/gte");
@@ -77,6 +84,7 @@ const seasons = [
 	},
 ];
 
+const ALL_SEASON_NAMES = ["Spring", "Summer", "Fall", "Winter"];
 const locationGroups: Record<string, string[]> = {
 	"Ocean": [
 		"Ocean",
@@ -142,6 +150,7 @@ export default function Fishing() {
 	const [_filter, setFilter] = useState("all");
 	const [_weatherFilter, setWeatherFilter] = useState("both");
 	const [_seasonFilter, setSeasonFilter] = useState("all");
+	const [includeAllSeasonFish, setIncludeAllSeasonFish] = useState(true);
 	const [_locationFilter, setLocationFilter] = useState("all");
 
 	const [gameVersion, setGameVersion] = useState("1.6.0");
@@ -326,6 +335,17 @@ export default function Fishing() {
 									icon={IconClock}
 									setFilter={setSeasonFilter}
 								/>
+								{_seasonFilter !== "all" && (
+									<Toggle
+										variant="outline"
+										pressed={includeAllSeasonFish}
+										onPressedChange={setIncludeAllSeasonFish}
+										aria-label="Toggle all-season fish"
+									>
+										<IconInfinity className="h-4 w-4" />
+										All-Season Fish
+									</Toggle>
+								)}
 								<FilterSearch
 									title="Location"
 									_filter={_locationFilter}
@@ -410,7 +430,16 @@ export default function Fishing() {
 								.filter((f) => {
 									if ("seasons" in f && f.trapFish === false) {
 										if (_seasonFilter === "all") return true;
-										return f.seasons.includes(_seasonFilter);
+										if (!f.seasons.includes(_seasonFilter)) return false;
+
+										if (!includeAllSeasonFish) {
+											const isAllSeason = ALL_SEASON_NAMES.every((season) =>
+												f.seasons.includes(season),
+											);
+											if (isAllSeason) return false;
+										}
+
+										return true;
 									}
 									return true;
 								})
