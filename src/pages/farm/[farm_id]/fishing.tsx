@@ -426,7 +426,7 @@ export default function Fishing() {
 											}
 										}
 									}
-									else if (_weatherFilter === "all" && f.trapFish === true) {return false}
+									else if (_weatherFilter === "all" && f.trapFish === true) {return true}
 									else if (_weatherFilter != "all" && f.trapFish === true) {return false}
 
 									return true;
