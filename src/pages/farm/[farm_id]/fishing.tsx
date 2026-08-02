@@ -414,7 +414,7 @@ export default function Fishing() {
 								})
 								.filter((f) => {
 									if ("weather" in f && f.trapFish === false) {
-										if (_weatherFilter === "both") {
+										if (_weatherFilter === "Both") {
 											return true;
 										} else {
 											if (_weatherFilter === "Sunny") {
@@ -426,8 +426,8 @@ export default function Fishing() {
 											}
 										}
 									}
-									else if (_weatherFilter === "both" && f.trapFish === true) {return true}
-									else if (_weatherFilter != "both" && f.trapFish === true) {return false}
+									else if (_weatherFilter === "Both" && f.trapFish === true) {return true}
+									else if (_weatherFilter != "Both" && f.trapFish === true) {return false}
 
 									return true;
 								})
