@@ -148,7 +148,7 @@ export default function Fishing() {
 
 	const [search, setSearch] = useState("");
 	const [_filter, setFilter] = useState("all");
-	const [_weatherFilter, setWeatherFilter] = useState("both");
+	const [_weatherFilter, setWeatherFilter] = useState("Both");
 	const [_seasonFilter, setSeasonFilter] = useState("all");
 	const [includeAllSeasonFish, setIncludeAllSeasonFish] = useState(true);
 	const [_locationFilter, setLocationFilter] = useState("all");
