@@ -23,6 +23,12 @@ type SaveFileHandle = {
 	getFile: () => Promise<File>;
 };
 
+// react-dropzone (via file-selector) attaches this itself when a dropped
+// item supports DataTransferItem.getAsFileSystemHandle() — Chromium-only,
+// and only in secure contexts. It's not something we construct ourselves;
+// we're just telling TypeScript it might be there.
+type DroppedFile = File & { handle?: SaveFileHandle };
+
 type FilePickerWindow = Window &
 	typeof globalThis & {
 	showOpenFilePicker?: () => Promise<SaveFileHandle[]>;
@@ -167,13 +173,32 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 		[router, uploadPlayers],
 	);
 
-	const handleChange = (file: File) => {
+	// Handles a file from the dropzone. If the browser was able to attach a
+	// FileSystemFileHandle to the drop (see DroppedFile above), that handle
+	// is durable and re-readable — unlike showOpenFilePicker, dragging a file
+	// isn't subject to Chromium's sensitive-directory blocklist, so this
+	// works even for files inside %appdata%\StardewValley\Saves. We treat
+	// that as "the user just connected auto-sync" with no separate step.
+	const handleChange = (file: DroppedFile) => {
+		if (typeof file === "undefined" || !file) return;
+
 		setOpen(false);
 		toast.promise(uploadFile(file, true), {
 			loading: "Uploading your save file...",
-			success: "Your save file was successfully uploaded!",
+			success: file.handle
+				? {
+					message: "Your save file was successfully uploaded!",
+					description:
+						"We'll keep this save synced automatically while this tab is open.",
+				}
+				: "Your save file was successfully uploaded!",
 			error: (err) => `There was an error parsing your save file:\n${err}`,
 		});
+
+		if (file.handle) {
+			lastSyncedModified.current = file.lastModified;
+			setSyncHandle(file.handle);
+		}
 	};
 
 	useEffect(() => {
@@ -198,6 +223,11 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 		return () => window.clearInterval(interval);
 	}, [syncHandle, uploadFile]);
 
+	// Manual fallback for people who'd rather click than drag. This still
+	// goes through showOpenFilePicker, so it will still hit the AppData
+	// blocklist described in the instructions dialog — kept around for save
+	// files that live outside a blocked directory (e.g. after following the
+	// junction workaround), or for platforms/setups where that isn't an issue.
 	const connectAutomaticSync = async () => {
 		const pickerWindow = window as FilePickerWindow;
 		if (!pickerWindow.showOpenFilePicker) {
@@ -237,7 +267,7 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 					<DialogDescription>
 						<Dropzone
 							onDrop={(acceptedFiles) => {
-								handleChange(acceptedFiles[0]);
+								handleChange(acceptedFiles[0] as DroppedFile);
 							}}
 							useFsAccessApi={false}
 						>
@@ -252,6 +282,10 @@ export const UploadDialog = ({ open, setOpen }: Props) => {
 											<div className="select-text text-center">
 												<p>
 													Drag and drop your save file here, or click to browse!
+												</p>
+												<p className="text-muted-foreground mt-2 text-xs">
+													Dragging your save file in also keeps it synced
+													automatically while this tab is open.
 												</p>
 											</div>
 										</div>
