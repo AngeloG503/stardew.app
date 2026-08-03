@@ -322,7 +322,7 @@ export default function Farmer() {
 											title="Mystery Boxes Opened"
 											description={
 												activePlayer?.general?.playerStats
-													? `${activePlayer.general.playerStats.mysteryBoxesOpened}`
+													? `${activePlayer.general.playerStats.MysteryBoxesOpened}`
 													: "No Info Found"
 											}
 											Icon={GiftIcon}

@@ -83,8 +83,7 @@ export const ownership = mysqlTable(
 	"Ownership",
 	{
 		userId: varchar("user_id", { length: 64 })
-			.notNull()
-			.references(() => users.id),
+			.notNull(),
 
 		saveId: varchar("save_id", { length: 32 })
 			.notNull()
