@@ -34,6 +34,11 @@ import {
 	PencilSquareIcon,
 	StarIcon,
 	UserIcon,
+	ForwardIcon,
+	XMarkIcon,
+	GiftIcon,
+	SparklesIcon,
+	TrashIcon,
 } from "@heroicons/react/24/solid";
 
 const STARDROPS = {
@@ -285,6 +290,60 @@ export default function Farmer() {
 													: "No Info Found"
 											}
 											Icon={StarIcon}
+										/>
+										<InfoCard
+											title="Steps Taken"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.stepsTaken.toLocaleString()}`
+													: "No Info Found"
+											}
+											Icon={ForwardIcon}
+										/>
+										<InfoCard
+											title="Trashcans Checked"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.trashCansChecked}`
+													: "No Info Found"
+											}
+											Icon={TrashIcon}
+										/>
+										<InfoCard
+											title="Geodes Cracked ;)"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.geodesCracked}`
+													: "No Info Found"
+											}
+											Icon={SparklesIcon}
+										/>
+										<InfoCard
+											title="Mystery Boxes Opened"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.mysteryBoxesOpened}`
+													: "No Info Found"
+											}
+											Icon={GiftIcon}
+										/>
+										<InfoCard
+											title="Ticket Prizes"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.ticketPrizesClaimed}`
+													: "No Info Found"
+											}
+											Icon={StarIcon}
+										/>
+										<InfoCard
+											title="Unconscious Counter"
+											description={
+												activePlayer?.general?.playerStats
+													? `${activePlayer.general.playerStats.timesUnconscious}`
+													: "No Info Found"
+											}
+											Icon={XMarkIcon}
 										/>
 									</div>
 								</AccordionContent>

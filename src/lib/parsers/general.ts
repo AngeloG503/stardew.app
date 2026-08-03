@@ -241,6 +241,36 @@ function parseIslandUpgrades(player: any): IslandUpgradesRet {
 	}
 }
 
+/* ------------------------------ player stats parser ------------------------------ */
+type PlayerStatsRet = Record<string, number>;
+
+function parsePlayerStats(player: any): PlayerStatsRet {
+	try {
+		const stats: PlayerStatsRet = {};
+
+		// New player format (1.6+)
+		if (isPlayerFormatUpdated(player)) {
+			const values = GetListOrEmpty(player.stats.Values, "item");
+
+			for (const item of values) {
+				const key = item?.key?.string;
+				const value = item?.value?.unsignedInt;
+
+				if (key) {
+					stats[key] = Number(value ?? 0);
+				}
+			}
+		} else {
+			// Pre-1.6 stores stats directly
+			Object.assign(stats, player.stats ?? {});
+		}
+
+		return stats;
+	} catch (error) {
+		throw error;
+	}
+}
+
 /* ----------------------------- general parser ----------------------------- */
 const farmTypes = [
 	"Standard",
@@ -266,6 +296,7 @@ export interface GeneralRet {
 	jojaMembership?: JojaRet;
 	achievements?: AchievementsRet;
 	islandUpgrades?: IslandUpgradesRet;
+	playerStats?: PlayerStatsRet;
 	platform?: "PC" | "Mobile" | "Console";
 }
 
@@ -301,6 +332,7 @@ export function parseGeneral(
 		const jojaMembership = parseJoja(player);
 		const achievements = parseAchievements(player);
 		const islandUpgrades = parseIslandUpgrades(player);
+		const playerStats = parsePlayerStats(player);
 
 		const result: GeneralRet = {
 			name,
@@ -314,6 +346,7 @@ export function parseGeneral(
 			gameVersion,
 			jojaMembership,
 			achievements,
+			playerStats,
 			islandUpgrades,
 		};
 
